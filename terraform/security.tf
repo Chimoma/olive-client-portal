@@ -236,7 +236,9 @@ resource "aws_iam_role_policy" "olive_codepipeline_policy" {
           "codedeploy:GetDeployment",
           "codedeploy:GetDeploymentConfig",
           "codedeploy:GetApplicationRevision",
-          "codedeploy:RegisterApplicationRevision"
+          "codedeploy:RegisterApplicationRevision",
+          "codedeploy:GetApplication",
+          "codedeploy:GetDeploymentGroup"
         ]
         Resource = "*"
       },
