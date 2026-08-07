@@ -4,11 +4,27 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::533267120258:role/olive-ecs-task-role",
+  "taskRoleArn": "arn:aws:iam::533267120258:role/olive-ecs-task-role",
   "containerDefinitions": [
     {
       "name": "olive-app-container",
       "image": "<IMAGE_URI>",
-      "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }]
+      "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }],
+      "secrets": [
+        {
+          "name": "DB_CREDENTIALS",
+          "valueFrom": "olive-db-secret"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/olive-task-def",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "olive"
+        }
+      }
     }
   ]
 }
