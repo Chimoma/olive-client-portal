@@ -1,0 +1,19 @@
+# Copy this file to terraform.tfvars and adjust as needed.
+# NOTE: db_password is NOT here on purpose - Terraform generates and stores
+# it automatically in Secrets Manager (olive-db-secret). Never put real
+# secrets in a .tfvars file that could be committed to git.
+
+aws_region  = "us-east-1"
+environment = "prod"
+vpc_cidr    = "10.0.0.0/16"
+
+db_username        = "olive_admin"
+db_instance_class  = "db.m5.large"
+redshift_node_type = "ra3.xlplus"
+
+container_port    = 8080
+ecs_desired_count = 2
+
+# Required - your GitHub repo in "owner/repo-name" format
+github_repo   = "your-github-username/olive-app"
+github_branch = "main"

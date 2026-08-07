@@ -1,0 +1,23 @@
+# Local Terraform working directories and plugin cache
+.terraform/
+.terraform.lock.hcl
+
+# Plan files - these can contain sensitive values in plain text
+*.tfplan
+*.tfplan.json
+
+# State files - contain real resource IDs and, depending on provider,
+# potentially sensitive attribute values. State lives in the S3 backend;
+# it should never be committed even if a local copy exists.
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Real variable values - only the .template file should be committed
+terraform.tfvars
+*.auto.tfvars
+
+# OS noise
+.DS_Store
+Thumbs.db
