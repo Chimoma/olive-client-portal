@@ -70,7 +70,7 @@ resource "aws_codebuild_project" "olive_build" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = "buildspec.yml" # lives in olive-app-repo, see olive-app/
+    buildspec = "olive-app/buildspec.yml" # app lives in the olive-app/ subfolder of this repo
   }
 
   tags = { Name = "olive-build" }
@@ -260,7 +260,9 @@ resource "aws_codepipeline" "olive_pipeline" {
         ApplicationName                = aws_codedeploy_app.olive_deploy_app.name
         DeploymentGroupName            = aws_codedeploy_deployment_group.olive_deploy_group.deployment_group_name
         TaskDefinitionTemplateArtifact = "build_output"
+        TaskDefinitionTemplatePath     = "taskdef.json"
         AppSpecTemplateArtifact        = "build_output"
+        AppSpecTemplatePath            = "appspec.yml"
       }
     }
   }
