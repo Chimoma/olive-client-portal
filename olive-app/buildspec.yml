@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URL
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t $ECR_REPO_URL:$IMAGE_TAG .
+      - docker tag $ECR_REPO_URL:$IMAGE_TAG $ECR_REPO_URL:latest
+  post_build:
+    commands:
+      - echo Pushing the image to ECR...
+      - docker push $ECR_REPO_URL:$IMAGE_TAG
+      - docker push $ECR_REPO_URL:latest
+      - echo Writing image definitions for CodeDeploy...
+      - printf '[{"name":"olive-app-container","imageUri":"%s"}]' $ECR_REPO_URL:$IMAGE_TAG > imagedefinitions.json
+      - cat taskdef.json | sed "s|<IMAGE_URI>|$ECR_REPO_URL:$IMAGE_TAG|g" > taskdef-final.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - taskdef-final.json
+    - appspec.yml

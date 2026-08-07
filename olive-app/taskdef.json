@@ -1,0 +1,14 @@
+{
+  "family": "olive-task-def",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "olive-app-container",
+      "image": "<IMAGE_URI>",
+      "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }]
+    }
+  ]
+}
