@@ -11,12 +11,10 @@ phases:
     commands:
       - echo Building the Docker image...
       - docker build -t $ECR_REPO_URL:$IMAGE_TAG olive-app
-      - docker tag $ECR_REPO_URL:$IMAGE_TAG $ECR_REPO_URL:latest
   post_build:
     commands:
       - echo Pushing the image to ECR...
       - docker push $ECR_REPO_URL:$IMAGE_TAG
-      - docker push $ECR_REPO_URL:latest
       - echo Writing image definitions for CodeDeploy...
       - printf '[{"name":"olive-app-container","imageUri":"%s"}]' $ECR_REPO_URL:$IMAGE_TAG > imagedefinitions.json
       - cat olive-app/taskdef.json | sed "s|<IMAGE_URI>|$ECR_REPO_URL:$IMAGE_TAG|g" > taskdef.json
