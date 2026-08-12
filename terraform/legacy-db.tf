@@ -38,6 +38,14 @@ resource "aws_security_group" "olive_legacy_db_sg" {
   tags = { Name = "olive-legacy-db-sg" }
 }
 
+resource "aws_db_subnet_group" "olive_legacy_db_subnet_group" {
+  name = "olive-legacy-db-subnet-group"
+  # Public subnets, unlike olive-db-instance's subnet group - this instance
+  # needs a real path in from the internet for the one-time data load.
+  subnet_ids = aws_subnet.olive_public_subnet[*].id
+  tags       = { Name = "olive-legacy-db-subnet-group" }
+}
+
 resource "aws_db_instance" "olive_legacy_db_instance" {
   identifier     = "olive-legacy-db-instance"
   engine         = "sqlserver-ex"
@@ -52,7 +60,7 @@ resource "aws_db_instance" "olive_legacy_db_instance" {
   password = random_password.olive_db_password.result
 
   publicly_accessible    = true # required for the initial data load; restrict after cutover
-  db_subnet_group_name   = aws_db_subnet_group.olive_db_subnet_group.name
+  db_subnet_group_name   = aws_db_subnet_group.olive_legacy_db_subnet_group.name
   vpc_security_group_ids = [aws_security_group.olive_legacy_db_sg.id]
 
   multi_az                = false

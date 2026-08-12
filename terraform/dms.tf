@@ -25,6 +25,26 @@ resource "aws_iam_role_policy_attachment" "dms_vpc_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonDMSVPCManagementRole"
 }
 
+# DMS also requires an IAM role with this EXACT name ("dms-cloudwatch-logs-role")
+# before it will write task logs to CloudWatch - same fixed-name requirement
+# as dms-vpc-role above.
+resource "aws_iam_role" "dms_cloudwatch_logs_role" {
+  name = "dms-cloudwatch-logs-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "dms.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "dms_cloudwatch_logs_role_policy" {
+  role       = aws_iam_role.dms_cloudwatch_logs_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonDMSCloudWatchLogsRole"
+}
+
 resource "aws_dms_replication_subnet_group" "olive_dms_subnet_group" {
   replication_subnet_group_id          = "olive-dms-subnet-group"
   replication_subnet_group_description = "Subnet group for olive-dms-instance"
@@ -83,7 +103,7 @@ resource "aws_dms_endpoint" "olive_dms_target" {
 
 resource "aws_dms_replication_task" "olive_dms_task" {
   replication_task_id      = "olive-dms-task"
-  migration_type           = "full-load-and-cdc"
+  migration_type           = "full-load"
   replication_instance_arn = aws_dms_replication_instance.olive_dms_instance.replication_instance_arn
   source_endpoint_arn      = aws_dms_endpoint.olive_dms_source.endpoint_arn
   target_endpoint_arn      = aws_dms_endpoint.olive_dms_target.endpoint_arn

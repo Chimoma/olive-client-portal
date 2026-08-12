@@ -200,6 +200,14 @@ resource "aws_lb_listener" "olive_alb_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.olive_tg_blue.arn
   }
+
+  # CodeDeploy flips this listener between olive-tg-blue and olive-tg-green
+  # on every blue/green deployment. Without this, any unrelated terraform
+  # apply reverts live traffic back to blue and orphans whichever task set
+  # CodeDeploy last shifted traffic to.
+  lifecycle {
+    ignore_changes = [default_action[0].target_group_arn]
+  }
 }
 
 # ---------------------------------------------------------------------------

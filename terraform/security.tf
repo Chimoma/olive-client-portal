@@ -44,6 +44,10 @@ resource "aws_security_group" "olive_ecs_sg" {
 }
 
 # RDS: only accept SQL Server traffic (1433) from ECS tasks
+# NOTE: the top-level "description" argument below is intentionally left
+# unchanged from its original text - changing it forces AWS to replace the
+# entire security group, which fails while it's attached to a live RDS
+# instance. Add/remove ingress rules freely; never edit this line.
 resource "aws_security_group" "olive_rds_sg" {
   name        = "olive-rds-sg"
   description = "Allow SQL Server traffic from Olive ECS tasks only"
@@ -55,6 +59,14 @@ resource "aws_security_group" "olive_rds_sg" {
     to_port         = 1433
     protocol        = "tcp"
     security_groups = [aws_security_group.olive_ecs_sg.id]
+  }
+
+  ingress {
+    description     = "SQL Server from DMS"
+    from_port       = 1433
+    to_port         = 1433
+    protocol        = "tcp"
+    security_groups = [aws_security_group.olive_dms_sg.id]
   }
 
   egress {
@@ -111,18 +123,28 @@ resource "aws_iam_role_policy_attachment" "olive_ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Lets the running app read its DB credentials from Secrets Manager
+# Lets the running app read its DB credentials from Secrets Manager, and
+# decrypt them via the KMS key the secret is encrypted with. Both are
+# required - GetSecretValue alone is not enough when the secret uses a
+# customer-managed KMS key rather than the AWS-managed default.
 resource "aws_iam_role_policy" "olive_ecs_secrets_access" {
   name = "olive-ecs-secrets-access"
   role = aws_iam_role.olive_ecs_task_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["secretsmanager:GetSecretValue"]
-      Resource = [aws_secretsmanager_secret.olive_db_secret.arn]
-    }]
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = [aws_secretsmanager_secret.olive_db_secret.arn]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:DescribeKey"]
+        Resource = [aws_kms_key.olive_kms_key.arn]
+      }
+    ]
   })
 }
 
