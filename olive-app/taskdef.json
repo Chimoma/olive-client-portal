@@ -14,7 +14,7 @@
       "secrets": [
         {
           "name": "DB_CREDENTIALS",
-          "valueFrom": "olive-db-secret"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:533267120258:secret:olive-db-secret-2REPUs"
         }
       ],
       "logConfiguration": {
