@@ -236,11 +236,22 @@ aws dms start-replication-task \
   --replication-task-arn $(aws dms describe-replication-tasks --query "ReplicationTasks[?ReplicationTaskIdentifier=='olive-dms-task'].ReplicationTaskArn" --output text) \
   --start-replication-task-type start-replication
 ```
+`start-replication` only works the very first time this task is run — AWS DMS rejects it with `InvalidParameterCombinationException` on any later run. If you need to run the migration again (e.g. re-seeding for a test, or recovering from a failed run), use one of these instead:
+- `--start-replication-task-type resume-processing` — picks up from where the task last stopped.
+- `--start-replication-task-type reload-target` — wipes the target tables and reloads everything from scratch.
+
+Check the task's current state first with:
+```bash
+aws dms describe-replication-tasks \
+  --filters Name=replication-task-id,Values=olive-dms-task \
+  --query "ReplicationTasks[0].{Status:Status,StopReason:StopReason}" --output table
+```
 
 **10c. Confirm the migrated data is queryable through the app:**
 ```bash
-curl http://$(terraform output -raw olive_alb_dns_name)/api/customers
+curl http://$(terraform -chdir=terraform output -raw olive_alb_dns_name)/api/customers
 ```
+(`-chdir=terraform` makes this work regardless of your shell's current directory — if you instead run plain `terraform output` from outside the `terraform/` dir, it fails with no state found, `$(...)` substitutes an empty string, and curl ends up trying to resolve `api` as a hostname from the malformed `http:///api/customers` URL.)
 You should see the customer records that started in `olive-legacy-db-instance`, now served from `olive-db-instance`.
 
 **Once cutover is verified:** edit `aws_dms_endpoint.olive_dms_source` in `dms.tf` if the source system changes, and run **AWS SCT** manually beforehand against its schema to convert anything that doesn't map directly (stored procedures, custom types) — SCT is a desktop tool and isn't something Terraform can drive. The legacy instance can then be decommissioned:
